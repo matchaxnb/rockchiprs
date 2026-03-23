@@ -502,6 +502,8 @@ pub struct Opts {
     #[arg(short, long, value_parser = parse_device)]
     /// Device type specified as <bus>:<address>
     pub device: Option<DeviceArg>,
+    #[arg(short, long, required(false), default_value_t = 0, value_parser = maybe_hex::<u16>)]
+    pub vendor_id: u16,
     #[command(subcommand)]
     pub command: Command,
 }

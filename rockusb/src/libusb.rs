@@ -4,6 +4,7 @@ use crate::operation::{OperationSteps, UsbStep};
 use rusb::{DeviceHandle, GlobalContext};
 use thiserror::Error;
 
+use crate::utils::default_vid;
 /// Error indicate a device is not available
 #[derive(Debug, Clone, Eq, PartialEq, Error)]
 #[error("Device is not available: {device:?} {error}")]
@@ -16,24 +17,39 @@ pub struct DeviceUnavalable {
 /// Rockchip devices
 pub struct Devices {
     devices: rusb::DeviceList<GlobalContext>,
+    vendor_id: u16,
 }
 
 impl Devices {
-    pub fn new() -> Result<Self> {
+    pub fn builder(vendor_id: Option<u16>) -> Result<Self> {
         let devices = rusb::DeviceList::new()?;
-        Ok(Self { devices })
+        Ok(Self {
+            devices,
+            vendor_id: default_vid(vendor_id),
+        })
     }
 
+    pub fn new() -> Result<Self> {
+        builder(None)
+    }
+
+    pub fn with_vendorid(vendor_id: u16) -> Result<Self> {
+        builder(Some(vendor_id))
+    }
     /// Create an Iterator over found Rockchip device
     pub fn iter(&self) -> DevicesIter {
         let iter = self.devices.iter();
-        DevicesIter { iter }
+        DevicesIter {
+            iter,
+            vendor_id: self.vendor_id,
+        }
     }
 }
 
 /// Iterator over found Rockchip device
 pub struct DevicesIter<'a> {
     iter: rusb::Devices<'a, GlobalContext>,
+    vendor_id: u16,
 }
 
 impl Iterator for DevicesIter<'_> {
@@ -45,7 +61,7 @@ impl Iterator for DevicesIter<'_> {
                 Ok(desc) => desc,
                 _ => continue,
             };
-            if desc.vendor_id() != 0x2207 {
+            if desc.vendor_id() != self.vendor_id {
                 continue;
             }
             let handle = match device.open() {

@@ -17,3 +17,6 @@ pub mod nusb;
 pub mod operation;
 /// low-level usb protocol data structures
 pub mod protocol;
+
+/// private helpers
+mod utils;

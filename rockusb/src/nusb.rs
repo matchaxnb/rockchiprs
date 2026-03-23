@@ -1,4 +1,5 @@
 use crate::operation::{OperationSteps, UsbStep};
+use crate::utils::default_vid;
 pub use nusb::transfer::TransferError;
 use nusb::{
     DeviceInfo,
@@ -14,11 +15,17 @@ pub struct DeviceUnavalable {
     pub error: nusb::Error,
 }
 
-/// List rockchip devices
-pub fn devices() -> std::result::Result<impl Iterator<Item = DeviceInfo>, nusb::Error> {
-    Ok(nusb::list_devices()?.filter(|d| d.vendor_id() == 0x2207))
+/// List devices, filtering by vendor_id
+pub fn devices_with_vendorid(
+    vendor_id: u16,
+) -> std::result::Result<impl Iterator<Item = DeviceInfo>, nusb::Error> {
+    Ok(nusb::list_devices()?.filter(move |d| d.vendor_id() == default_vid(Some(vendor_id))))
 }
 
+/// List rockchip devices
+pub fn devices() -> std::result::Result<impl Iterator<Item = DeviceInfo>, nusb::Error> {
+    devices_with_vendorid(default_vid(None))
+}
 impl From<TransferError> for crate::device::Error<TransferError> {
     fn from(value: TransferError) -> Self {
         Self::UsbError(value)
